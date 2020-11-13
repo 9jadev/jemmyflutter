@@ -22,7 +22,7 @@ class ValidationMixin {
     }
 
     int len = value.length;
-    if (len < 50 && len > 600) {
+    if (len < 50) {
       return 'About must be between 50 to 600 characters';
     }
     return null;

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'views/Loading.dart';
 import 'views/Signup.dart';
 import 'views/Login.dart';
+import 'views/dashboard/Home.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 void main() {
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/', page: () => Loading()),
         GetPage(name: '/signup', page: () => Signup()),
         GetPage(name: '/login', page: () => Login()),
+        GetPage(name: '/dashbord/home', page: () => Home())
         // GetPage(
         //   name: '/third',
         //   page: () => Third(),

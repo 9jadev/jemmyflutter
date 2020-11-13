@@ -4,6 +4,10 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:http/http.dart';
 import 'package:get/get.dart';
 import 'Login.dart';
+import 'dart:convert';
+import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'Loading.dart';
 
 class Signup extends StatefulWidget {
   @override
@@ -18,32 +22,112 @@ class _SignupState extends State<Signup> with ValidationMixin {
   String password = '';
   String confirmpassword = '';
   bool _enabled = true;
+  bool _errorserver = false;
+
+  Map _errors = {'nickname': '', 'email': '', 'password': '', 'aboutus': ''};
+  _onAlertWithCustomContentPressed(context) {
+    Alert(
+      context: context,
+      type: AlertType.error,
+      title: "Whoop's",
+      desc: "We encountered some error in signup process",
+      buttons: [
+        DialogButton(
+          child: Text(
+            "Close",
+            style: TextStyle(color: Colors.white, fontSize: 20),
+          ),
+          onPressed: () => Navigator.pop(context),
+          width: 120,
+        )
+      ],
+    ).show();
+  }
+
+  _onAlertNeteork(context) {
+    Alert(
+      context: context,
+      type: AlertType.error,
+      title: "Whoop's",
+      desc: "We encountered a network error.",
+      buttons: [
+        DialogButton(
+          child: Text(
+            "Close",
+            style: TextStyle(color: Colors.white, fontSize: 20),
+          ),
+          onPressed: () => Navigator.pop(context),
+          width: 120,
+        )
+      ],
+    ).show();
+  }
 
   void validate() {
     // EasyLoading.('Use in initState');
     setState(() => _enabled = false);
-    EasyLoading.show(status: 'loading...');
     if (formkey.currentState.validate()) {
       formkey.currentState.save();
-      print(
-          'validated $email and $nickname and $password and $confirmpassword');
+      // print(
+      // 'validated $email and $nickname and $password and $confirmpassword');
+      EasyLoading.show(status: 'loading...');
       _Signupmember(email, nickname, about, password, confirmpassword);
     } else {
       print("not validated");
     }
-    // setState(() => _enabled = true);
+    setState(() => _enabled = true);
+    // EasyLoading.dismiss();
+  }
+
+  _loginstorage(Map user, String accessToken) async {
+    SharedPreferences authstorage = await SharedPreferences.getInstance();
+    authstorage.setString('user', json.encode(user));
+    authstorage.setString('accessToken', accessToken);
+    Get.to(Loading());
   }
 
   Future _Signupmember(String email, String nickname, String about,
       String password, String confirmpassword) async {
     // make GET request
     String url = 'https://jemmy.herokuapp.com/api/register';
-    Map<String, String> headers = {"Content-type": "application/json"};
-    String json =
-        '{"email": email, "nickname": nickname, "about": about, "password": password, "password_confirmation": confirmpassword}';
+    Map<String, String> headers = {"Accept": "application/json"};
+    Map<String, dynamic> json = {
+      "email": email,
+      "nickname": nickname,
+      "aboutus": about,
+      "password": password,
+      "password_confirmation": confirmpassword
+    };
     Response response = await post(url, headers: headers, body: json);
-    String body = response.body;
-    print(body);
+    var body = jsonDecode(response.body);
+    print(response.statusCode);
+    if (response.statusCode == 422) {
+      _errorserver = false;
+      _onAlertWithCustomContentPressed(context);
+
+      body["errors"].forEach((key, value) {
+        _errors[key] = value[0];
+      });
+      setState(() {
+        _errorserver = true;
+      });
+      // print(body["errors"]["nickname"][0]);
+      EasyLoading.dismiss();
+    }
+    if (response.statusCode == 200) {
+      // print(body["user"]);
+      // print(body["accessToken"]);
+      _loginstorage(body["user"], body["accessToken"]);
+      EasyLoading.dismiss();
+    }
+    if (response.statusCode == 301 ||
+        response.statusCode == 400 ||
+        response.statusCode == 403) {
+      print(response.statusCode);
+      EasyLoading.dismiss();
+      _onAlertNeteork(context);
+    }
+    // print(body["message"]);
   }
 
   @override
@@ -125,6 +209,7 @@ class _SignupState extends State<Signup> with ValidationMixin {
                                     decoration: InputDecoration(
                                       hintText: 'Enter Nick Name',
                                       hintStyle: TextStyle(color: Colors.grey),
+                                      errorText: _errors["nickname"],
                                       border: InputBorder.none,
                                     ),
                                     validator: validateNickname,
@@ -132,6 +217,9 @@ class _SignupState extends State<Signup> with ValidationMixin {
                                       if (value.isEmpty) {
                                         return 'Nick Name is requred';
                                       } else {
+                                        setState(() {
+                                          _errors["nickname"] = null;
+                                        });
                                         return null;
                                       }
                                     },
@@ -153,6 +241,8 @@ class _SignupState extends State<Signup> with ValidationMixin {
                                     decoration: InputDecoration(
                                       hintText: 'Enter Email',
                                       hintStyle: TextStyle(color: Colors.grey),
+                                      errorText:
+                                          _errorserver ? _errors["email"] : '',
                                       border: InputBorder.none,
                                     ),
                                     validator: validateEmail,
@@ -160,6 +250,9 @@ class _SignupState extends State<Signup> with ValidationMixin {
                                       if (value.isEmpty) {
                                         return 'Email Name is requred';
                                       } else {
+                                        setState(() {
+                                          _errors["email"] = null;
+                                        });
                                         return null;
                                       }
                                     },
@@ -212,6 +305,9 @@ class _SignupState extends State<Signup> with ValidationMixin {
                                     decoration: InputDecoration(
                                       hintText: 'Enter Password',
                                       hintStyle: TextStyle(color: Colors.grey),
+                                      errorText: _errorserver
+                                          ? _errors["password"]
+                                          : '',
                                       border: InputBorder.none,
                                     ),
                                     validator: validatePassword,
@@ -219,6 +315,9 @@ class _SignupState extends State<Signup> with ValidationMixin {
                                       if (value.isEmpty) {
                                         return 'Password is requred';
                                       } else {
+                                        setState(() {
+                                          _errors["password"] = null;
+                                        });
                                         return null;
                                       }
                                     },
