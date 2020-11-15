@@ -4,7 +4,6 @@ import 'package:jemy/Mixins/validation_mixins.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:http/http.dart';
 import 'package:get/get.dart';
-import 'Login.dart';
 import 'dart:convert';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
